@@ -1,0 +1,16 @@
+{
+  "name": "caravel-reservations",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.9.0" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node --env-file-if-exists=.env dist/src/server.js",
+    "dev": "npm run build && npm start",
+    "db:setup": "node --env-file-if-exists=.env scripts/setup-db.mjs",
+    "test": "npm run build && node --env-file-if-exists=.env --test --test-concurrency=1 dist/test/*.test.js"
+  },
+  "dependencies": { "express": "^5.1.0", "pg": "^8.16.3" },
+  "devDependencies": { "@types/express": "^5.0.3", "@types/node": "^22.18.0", "@types/pg": "^8.15.5", "typescript": "^5.9.2" }
+}
