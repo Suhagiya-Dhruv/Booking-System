@@ -8,7 +8,7 @@ try {
   for (const file of ['schema.sql', 'seed.sql']) {
     await client.query(await readFile(new URL(`../db/${file}`, import.meta.url), 'utf8'));
   }
-  console.log('Schema and three inventory pools created.');
+  console.log('Schema ready; three inventory pools ensured. Existing reservations preserved.');
 } finally {
   await client.end();
 }

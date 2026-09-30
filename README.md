@@ -38,8 +38,10 @@ The API listens on `http://127.0.0.1:3000`. PostgreSQL is exposed only on
 `127.0.0.1:55432` to avoid an existing database on port 5432. The credentials in
 `.env.example` are public, fictional local fixtures. `.env` is ignored by Git.
 
-`db:setup` creates tables and seeds the **application** database. Run it once on
-an empty database; it deliberately does not drop existing application data.
+`db:setup` creates missing tables and seeds the **application** database. It is
+safe to rerun: existing tables and reservations are preserved, and the seed does
+not duplicate inventory pools. This setup command does not migrate or repair an
+existing table with a different schema; schema changes need explicit migrations.
 Compose creates the separate `reservations_test` database on first initialization.
 For a pre-existing Compose volume without that database, create it once:
 
@@ -163,7 +165,7 @@ database session temporarily holds a blocking lock. The test inspects
 `pg_stat_activity` and requires both server sessions to be waiting on locks
 before releasing them. Assertions check HTTP outcomes **and persisted rows**.
 
-Verified locally: **17/17 automated tests passed**, TypeScript compilation passed,
+Verified locally: **18/18 automated tests passed**, TypeScript compilation passed,
 and the application setup script produced exactly the three specified pools.
 
 | Verified behavior | Evidence in `test/reservations.test.ts` |
@@ -182,6 +184,7 @@ and the application setup script produced exactly the three specified pools.
 | Past dates and exact strings | Leap day accepted; IDs with trailing spaces remain distinct |
 | Direct SQL bypass | Exclusion and uniqueness violations leave original unchanged |
 | Infrastructure failure | Real refused database connection gives sanitized 503 |
+| Repeated setup | Setup script runs twice on populated tables, preserving rows and three pools |
 
 Not fault-injected: process termination immediately before commit, loss of the
 HTTP response immediately after commit, database restart/failover, network
@@ -225,9 +228,10 @@ The three highest-priority production improvements would be:
 
 ## Submission notes
 
-- Time spent: approximately 13 minutes on 30 September 2026, including implementation,
+- Time spent: approximately 15 minutes on 30 September 2026, including implementation,
   dependency/database setup, review, automated tests and documentation (within the
-  90-minute exercise limit). Candidate reading and follow-up preparation are separate.
+  90-minute exercise limit), including a follow-up fix for repeatable database setup.
+  Candidate reading and follow-up preparation are separate.
 - AI tools used: OpenAI Codex for implementation, review, tests and documentation.
 - Synthetic customer data only; no real broker credentials or customer records.
 - [Walkthrough notes](WALKTHROUGH.md) explain the code for the follow-up discussion.

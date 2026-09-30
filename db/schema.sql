@@ -2,14 +2,14 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 -- One row represents exactly one vehicle. No capacity arithmetic is needed.
-CREATE TABLE inventory_pools (
+CREATE TABLE IF NOT EXISTS inventory_pools (
   operator_id text NOT NULL,
   vehicle_group text NOT NULL,
   location text NOT NULL CHECK (location = 'airport'),
   PRIMARY KEY (operator_id, vehicle_group, location)
 );
 
-CREATE TABLE reservations (
+CREATE TABLE IF NOT EXISTS reservations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   operator_id text NOT NULL,
   external_booking_id text NOT NULL CHECK (btrim(external_booking_id) <> ''),

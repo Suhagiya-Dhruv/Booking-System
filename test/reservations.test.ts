@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { after, before, beforeEach, test } from 'node:test';
-import { fork, type ChildProcess } from 'node:child_process';
+import { execFile, fork, type ChildProcess } from 'node:child_process';
+import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { once } from 'node:events';
 import pg from 'pg';
@@ -127,6 +129,24 @@ test('201 persists every field; 200 replay across processes returns original ID'
   assert.equal(replay.status, 200);
   assert.deepEqual(replay.body, created.body);
   assert.deepEqual(await rows(), original);
+});
+
+test('setup can run twice on populated tables without changing reservations or duplicating pools', async () => {
+  assert.equal((await post()).status, 201);
+  const original = await rows();
+  const setup = fileURLToPath(new URL('../../scripts/setup-db.mjs', import.meta.url));
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await promisify(execFile)(process.execPath, [setup], {
+      env: { ...process.env, DATABASE_URL: connectionString },
+    });
+    assert.deepEqual(await rows(), original);
+    const inventory = await db.query('SELECT * FROM inventory_pools ORDER BY operator_id, vehicle_group');
+    assert.deepEqual(inventory.rows, [
+      { operator_id: 'operator-a', vehicle_group: 'compact', location: 'airport' },
+      { operator_id: 'operator-a', vehicle_group: 'economy', location: 'airport' },
+      { operator_id: 'operator-b', vehicle_group: 'economy', location: 'airport' },
+    ]);
+  }
 });
 
 test('concurrent different IDs for one pool: one 201 and one NO_AVAILABILITY', async () => {
